@@ -12,6 +12,7 @@ public class Hash
     {
         setHash(data);
     }
+
     private String SHA1FromBytes(byte[] data)
     {
         MessageDigest digest = null;
@@ -27,6 +28,8 @@ public class Hash
         BigInteger hashInt = new BigInteger(1, hash);
         return hashInt.toString(16);
     }
+    // Above method from CS455-LabSession-5 (Slide 14)
+
 
     private void setHash(byte[] data)
     {
