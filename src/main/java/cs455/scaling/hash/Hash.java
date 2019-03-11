@@ -7,13 +7,14 @@ import java.security.NoSuchAlgorithmException;
 public class Hash
 {
     private String dataHash;
-
+    //TODO: Re-implement with default constructor and only hash function. Not using Hash as a data structure?
     public Hash(byte[] data)
     {
         setHash(data);
     }
 
-    private String SHA1FromBytes(byte[] data)
+
+    public String SHA1FromBytes(byte[] data)
     {
         MessageDigest digest = null;
         try
@@ -34,6 +35,15 @@ public class Hash
     private void setHash(byte[] data)
     {
         dataHash = SHA1FromBytes(data);
+    }
+
+    public String getHash()
+    {
+        return dataHash;
+    }
+    public String computeHash(byte[] data)
+    {
+        return SHA1FromBytes(data);
     }
 
     public synchronized boolean compareHash(Hash compareHash)

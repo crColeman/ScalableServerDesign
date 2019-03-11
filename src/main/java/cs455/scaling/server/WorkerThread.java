@@ -1,25 +1,38 @@
 package cs455.scaling.server;
 
-public class WorkerThread extends Thread
+import java.util.concurrent.LinkedBlockingQueue;
+
+class WorkerThread extends Thread
 {
+    private final LinkedBlockingQueue<Runnable> workQueue;
+    WorkerThread(LinkedBlockingQueue workQueue)
+    {
+        System.out.println("Worker Thread Constructor");
+        this.workQueue = workQueue;
+    }
+
     public void run()
     {
+        System.out.println("Worker Thread Run");
         Runnable work;
         while (true)
         {
-            synchronized (ThreadPoolManager.workQueue)
+            synchronized (workQueue)
             {
-                if (ThreadPoolManager.workQueue.isEmpty())
+                if (workQueue.isEmpty())
                 {
                     try
                     {
-                        ThreadPoolManager.workQueue.wait();
+                        workQueue.wait();
                     } catch (InterruptedException e)
                     {
                         System.out.println("A worker thread was interrupted while waiting for work\n" + e);
                     }
                 }
-                work = ThreadPoolManager.workQueue.poll();
+                synchronized (workQueue)
+                {
+                    work = workQueue.poll();
+                }
             }
 
             try
