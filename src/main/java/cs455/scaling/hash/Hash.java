@@ -19,9 +19,18 @@ public class Hash
         }
         byte[] hash = digest.digest(data);
         BigInteger hashInt = new BigInteger(1, hash);
-        return hashInt.toString(16);
-    }
-    // Above method from CS455-LabSession-5 (Slide 14)
 
+        //Returns the hash with 0's padded to the left
+        //TODO: Check to make sure padding should be to the left.
+        return String.format("%40s", hashInt.toString(16)).replace(' ', '0');
+
+
+    }
+
+    // Above method from CS455-LabSession-5 (Slide 14)
+//    public static String padHash(String hash, int n)
+//    {
+//        return String.format("%" + n + );
+//    }
 
 }

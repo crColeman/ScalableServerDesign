@@ -31,8 +31,10 @@ public class SenderThread implements Runnable
             sendBuffer.put(payload);
             sendBuffer.flip();
             writeBuffer();
-
-            client.clientSideHashCodes.add(Hash.SHA1FromBytes(payload));
+            String hash = Hash.SHA1FromBytes(payload);
+            assert hash != null;
+            System.out.println("Hash Length: " + hash.length());
+            client.clientSideHashCodes.add(hash);
             try
             {
                 Thread.sleep(packetDelay);

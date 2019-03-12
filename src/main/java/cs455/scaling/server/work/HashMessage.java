@@ -24,9 +24,8 @@ public class HashMessage extends Work
     @Override
     public void run()
     {
-        System.out.println("HashMessage");
         String hash = Hash.SHA1FromBytes(messagePayload);
-        System.out.println(hash);
+
         server.threadPoolManager.addWork(new ReplyMessage(key, server, hash));
         key.interestOps(SelectionKey.OP_READ);
 

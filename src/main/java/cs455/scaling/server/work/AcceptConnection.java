@@ -23,7 +23,6 @@ public class AcceptConnection extends Work
         try
         {
             acceptConnection();
-            System.out.println("Connection Accepted");
             key.channel().register(server.getMySelector(), key.interestOps() & SelectionKey.OP_ACCEPT);
         }
         catch (IOException e)

@@ -2,6 +2,7 @@ package cs455.scaling.client;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -12,6 +13,8 @@ public class Client
     final ConcurrentLinkedQueue<String> clientSideHashCodes = new ConcurrentLinkedQueue<>();
     private final SocketChannel socketChannel;
     private final AtomicInteger sentPacketCount = new AtomicInteger(0);
+    private final ByteBuffer receiveBuffer = ByteBuffer.allocate(8192);
+
     private final int packetRate;
     private final int packetDelay;
 
@@ -40,11 +43,13 @@ public class Client
     {
         while (true)
         {
+            receiveBuffer.clear();
+            byte[] hashResponseBytes = new byte[8192];
 
         }
     }
 
-    public void initialize()
+    private void initialize()
     {
 
         new Thread(new SenderThread(this, packetDelay)).start();
