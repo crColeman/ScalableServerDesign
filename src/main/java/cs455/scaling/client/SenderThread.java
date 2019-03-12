@@ -32,7 +32,7 @@ public class SenderThread implements Runnable
             sendBuffer.flip();
             writeBuffer();
 
-            client.clientSideHashCodes.add(new Hash(payload).getHash());
+            client.clientSideHashCodes.add(Hash.SHA1FromBytes(payload));
             try
             {
                 Thread.sleep(packetDelay);
@@ -47,11 +47,11 @@ public class SenderThread implements Runnable
 
     private void writeBuffer()
     {
-        System.out.println("Writing Packet to Server");
         while (sendBuffer.hasRemaining())
         {
             try
             {
+
                 client.getSocketChannel().write(sendBuffer);
             }
             catch (IOException e)

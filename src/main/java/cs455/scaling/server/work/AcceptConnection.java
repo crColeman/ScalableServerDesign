@@ -3,6 +3,7 @@ package cs455.scaling.server.work;
 import cs455.scaling.server.Server;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -22,12 +23,13 @@ public class AcceptConnection extends Work
         try
         {
             acceptConnection();
+            System.out.println("Connection Accepted");
+            key.channel().register(server.getMySelector(), key.interestOps() & SelectionKey.OP_ACCEPT);
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
-        System.out.println("Connection Accepted");
     }
 
     private void acceptConnection() throws IOException

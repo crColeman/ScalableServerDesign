@@ -6,17 +6,9 @@ import java.security.NoSuchAlgorithmException;
 
 public class Hash
 {
-    private String dataHash;
-    //TODO: Re-implement with default constructor and only hash function. Not using Hash as a data structure?
-    public Hash(byte[] data)
+    public static String SHA1FromBytes(byte[] data)
     {
-        setHash(data);
-    }
-
-
-    public String SHA1FromBytes(byte[] data)
-    {
-        MessageDigest digest = null;
+        MessageDigest digest;
         try
         {
             digest = MessageDigest.getInstance("SHA1");
@@ -32,22 +24,4 @@ public class Hash
     // Above method from CS455-LabSession-5 (Slide 14)
 
 
-    private void setHash(byte[] data)
-    {
-        dataHash = SHA1FromBytes(data);
-    }
-
-    public String getHash()
-    {
-        return dataHash;
-    }
-    public String computeHash(byte[] data)
-    {
-        return SHA1FromBytes(data);
-    }
-
-    public synchronized boolean compareHash(Hash compareHash)
-    {
-        return dataHash == compareHash.dataHash;
-    }
 }

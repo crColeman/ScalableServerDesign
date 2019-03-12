@@ -4,9 +4,10 @@ import cs455.scaling.server.work.Work;
 
 import java.util.concurrent.LinkedBlockingQueue;
 
-class ThreadPoolManager
+public class ThreadPoolManager
 {
-    private  final LinkedBlockingQueue<Runnable> workQueue;
+
+    public final LinkedBlockingQueue<Runnable> workQueue;
     private WorkerThread[] workerThreadPool;
     private final int batchSize;
     private final int batchTime;

@@ -22,7 +22,7 @@ public class Server
     private final ServerSocketChannel serverSocketChannel;
 
     private final AtomicInteger clientConnectionCount = new AtomicInteger(0);
-    private final ThreadPoolManager threadPoolManager;
+    public final ThreadPoolManager threadPoolManager;
     private final int batchSize;
     private final int batchTime;
     /**
@@ -85,19 +85,18 @@ public class Server
             SelectionKey key = keyIterator.next();
             if (!key.isValid())
             {
-                System.out.println("Valid Key");
+                System.out.println("Invalid Key");
                 continue;
             }
 
             if (key.isAcceptable())
             {
-                System.out.println("Key Acceptable");
                 serverSocketChannel.register(mySelector, key.interestOps() & ~SelectionKey.OP_ACCEPT);
                 threadPoolManager.addWork(new AcceptConnection(key, this));
             }else if (key.isReadable())
             {
-                System.out.println("Receiving Message");
-                serverSocketChannel.register(mySelector, key.interestOps() & ~SelectionKey.OP_READ);
+                key.interestOps(SelectionKey.OP_WRITE);
+//                serverSocketChannel.register(mySelector, key.interestOps() & ~SelectionKey.OP_READ);
                 threadPoolManager.addWork(new ReadMessage(key, this, batchSize, batchTime));
             }
 
@@ -129,15 +128,18 @@ public class Server
         clientConnectionCount.decrementAndGet();
     }
 
-    public Selector getMySelector()
+    public synchronized Selector getMySelector()
     {
         return mySelector;
     }
 
+    public ServerSocketChannel getServerSocketChannel()
+    {
+        return serverSocketChannel;
+    }
       //////////////////////////////
      /////Command Line Input///////
     //////////////////////////////
-
     public static void printUsage()
     {
         System.out.println("USAGE: cs455.scaling.server.Server [portnum] [thread-pool-size] [batch-size] [batch-time]" +

@@ -5,12 +5,14 @@ import cs455.scaling.server.Server;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 public class ReadMessage extends Work
 {
     private final ByteBuffer receiveBuffer = ByteBuffer.allocate(10192);
+
     public ReadMessage(SelectionKey key, Server server, int batchSize, int batchTime)
     {
         this.key = key;
@@ -23,29 +25,41 @@ public class ReadMessage extends Work
     public void run()
     {
         SocketChannel socketToClient = (SocketChannel) key.channel();
+        try
+        {
+            socketToClient.configureBlocking(false);
+            socketToClient.register(server.getMySelector(), SelectionKey.OP_READ);
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
         receiveBuffer.clear();
-        byte[] messageBytes = null;
-
-
+        byte[] messageBytes = new byte[8192];
+        readBufferTillBatchSize(messageBytes, socketToClient);
+        key.interestOps(SelectionKey.OP_READ);
+        server.getMySelector().wakeup();
 
     }
 
     private void readBufferTillBatchSize(byte[] messageBytes, SocketChannel socketToClient)
     {
-        while (messageBytes.length < batchSize)
+        try
         {
-            try
+            int num = 0;
+            while (num < 1)
             {
-                socketToClient.read(receiveBuffer);
-                receiveBuffer.get(messageBytes);
-                System.out.println(messageBytes);
+                num = socketToClient.read(receiveBuffer);
             }
-            catch (IOException e)
-            {
-                System.out.println("ReadMessage: Error while receiving message");
-                e.printStackTrace();
-            }
+            receiveBuffer.rewind();
+            receiveBuffer.get(messageBytes);
         }
-        server.getMySelector().wakeup();
+        catch (IOException e)
+        {
+            System.out.println("ReadMessage: Error while receiving message");
+            e.printStackTrace();
+        }
+
+        server.threadPoolManager.addWork(new HashMessage(key, server, messageBytes));
     }
 }
