@@ -19,11 +19,11 @@ public class AcceptConnection extends Work
     @Override
     public void run()
     {
-
         try
         {
             acceptConnection();
-            key.channel().register(server.getMySelector(), key.interestOps() & SelectionKey.OP_ACCEPT);
+            key.channel().register(server.getMySelector(), SelectionKey.OP_ACCEPT);
+
         }
         catch (IOException e)
         {
@@ -33,6 +33,7 @@ public class AcceptConnection extends Work
 
     private void acceptConnection() throws IOException
     {
+        System.out.println("Accept Connection");
         SocketChannel clientChannel = ((ServerSocketChannel)key.channel()).accept();
         clientChannel.configureBlocking(false);
         clientChannel.register(server.getMySelector(), SelectionKey.OP_READ);

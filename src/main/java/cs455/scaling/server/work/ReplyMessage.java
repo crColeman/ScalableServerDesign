@@ -19,26 +19,27 @@ public class ReplyMessage extends Work
     @Override
     public void run()
     {
+        System.out.println("Reply");
+        key.interestOps(SelectionKey.OP_WRITE);
         SocketChannel socketToClient = (SocketChannel)key.channel();
         ByteBuffer sendBuffer = ByteBuffer.wrap(hash.getBytes());
-        sendBuffer.flip();
 
         try
         {
             socketToClient.configureBlocking(false);
             socketToClient.register(server.getMySelector(), SelectionKey.OP_WRITE);
+            server.incrementReplySentCount();
             while(sendBuffer.hasRemaining())
             {
                 socketToClient.write(sendBuffer);
             }
             key.interestOps(SelectionKey.OP_READ);
-
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
-//        server.getMySelector().wakeup();
+        server.getMySelector().wakeup();
 
     }
 }

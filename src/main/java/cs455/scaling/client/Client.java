@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Client
 {
-    final ConcurrentLinkedQueue<String> clientSideHashCodes = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<String> clientSideHashCodes = new ConcurrentLinkedQueue<>();
     private final SocketChannel socketChannel;
     private final AtomicInteger sentPacketCount = new AtomicInteger(0);
     private final ByteBuffer receiveBuffer = ByteBuffer.allocate(8192);
@@ -34,7 +34,7 @@ public class Client
                 break;
             }
         }while (!socketChannel.finishConnect());
-        /** Adapted from connect() example: http://tutorials.jenkov.com/java-nio/socketchannel.html **/
+        // Adapted from connect() example: http://tutorials.jenkov.com/java-nio/socketchannel.html
     }
 
 
@@ -43,8 +43,29 @@ public class Client
     {
         while (true)
         {
+
             receiveBuffer.clear();
-            byte[] hashResponseBytes = new byte[8192];
+            byte[] hashResponseBytes = new byte[40];
+            int check = 0;
+            try
+            {
+                while (check < 40)
+                {
+                    check = socketChannel.read(receiveBuffer);
+                }
+
+            }
+            catch (IOException e)
+            {
+                System.out.println("Error while reading server response." + e);
+            }
+            receiveBuffer.flip();
+            receiveBuffer.get(hashResponseBytes);
+            System.out.println(new String(hashResponseBytes));
+            if (!checkHash(new String(hashResponseBytes)))
+            {
+                System.out.println("Hash does not match records; ");
+            }
 
         }
     }
@@ -56,8 +77,24 @@ public class Client
 //        new Thread(new ClientStatistics()).start();
     }
 
+    public boolean checkHash(String receivedHash)
+    {
+        boolean check;
+        synchronized (clientSideHashCodes)
+        {
+            check = clientSideHashCodes.remove(receivedHash);
+            clientSideHashCodes.notify();
+        }
+        return check;
+    }
 
-
+    public void addHash(String hash)
+    {
+        synchronized (clientSideHashCodes)
+        {
+            clientSideHashCodes.add(hash);
+        }
+    }
 
 
     public void incrementSentPacketCount()

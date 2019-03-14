@@ -27,10 +27,4 @@ public class Hash
 
     }
 
-    // Above method from CS455-LabSession-5 (Slide 14)
-//    public static String padHash(String hash, int n)
-//    {
-//        return String.format("%" + n + );
-//    }
-
 }

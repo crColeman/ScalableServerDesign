@@ -24,10 +24,10 @@ public class HashMessage extends Work
     @Override
     public void run()
     {
+        System.out.println("Hash");
         String hash = Hash.SHA1FromBytes(messagePayload);
-
-        server.threadPoolManager.addWork(new ReplyMessage(key, server, hash));
-        key.interestOps(SelectionKey.OP_READ);
+//        key.interestOps(SelectionKey.OP_READ);
+        new ReplyMessage(key, server, hash).run();
 
 
     }
