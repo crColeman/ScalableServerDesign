@@ -1,22 +1,23 @@
 package cs455.scaling.server;
 
+import cs455.scaling.server.work.Work;
+
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 class WorkerThread extends Thread
 {
-    private final LinkedBlockingQueue<Runnable> workQueue;
-    WorkerThread(LinkedBlockingQueue<Runnable> workQueue)
+    private final LinkedBlockingQueue<ConcurrentLinkedQueue<Work>> workQueue;
+    WorkerThread(LinkedBlockingQueue<ConcurrentLinkedQueue<Work>> workQueue)
     {
-        System.out.println("Worker Thread Constructor");
         this.workQueue = workQueue;
     }
 
     public void run()
     {
-        System.out.println("Worker Thread Run");
-        Runnable work;
-
-
+        ConcurrentLinkedQueue<Work> workList = null;
             while (true)
             {
                 synchronized (workQueue)
@@ -26,29 +27,38 @@ class WorkerThread extends Thread
                         try
                         {
                             workQueue.wait();
+                            workList = workQueue.poll();
                         }
                         catch (InterruptedException e)
                         {
                             System.out.println("A worker thread was interrupted while waiting for work\n" + e);
                         }
                     }
-                    synchronized (workQueue)
-                    {
-                        work = workQueue.poll();
-                    }
 
                 }
 
                 try
                 {
-                    if ( work != null)
+                    if ( workList != null)
                     {
-                        work.run();
+                        Iterator<Work> workListIterator = workList.iterator();
+                        while (workListIterator.hasNext())
+                        {
+                            if (workList.isEmpty())
+                            {
+                                continue;
+                            }
+
+                            Runnable workUnit;
+                            if((workUnit = workList.poll()) != null)
+                            Objects.requireNonNull(workUnit).run();
+                        }
                     }
                 }
-                catch (RuntimeException e)
+                catch (Exception e)
                 {
-                    System.out.println("A worker thread threw a RuntimeException: " + e + work.getClass());
+                    System.out.println("A worker thread threw a RuntimeException: " + e + " Size " + workList.size());
+                    e.printStackTrace();
                 }
             }
     }

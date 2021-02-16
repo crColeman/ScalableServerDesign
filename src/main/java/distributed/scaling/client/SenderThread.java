@@ -30,12 +30,14 @@ public class SenderThread implements Runnable
             sendBuffer.clear();
             sendBuffer.put(payload);
             sendBuffer.flip();
+            String hash = Hash.SHA1FromBytes(payload);
+
+            client.addHash(hash);
             writeBuffer();
 
-            client.clientSideHashCodes.add(Hash.SHA1FromBytes(payload));
             try
             {
-                Thread.sleep(packetDelay);
+                Thread.currentThread().sleep((long)packetDelay);
             }
             catch (InterruptedException e)
             {

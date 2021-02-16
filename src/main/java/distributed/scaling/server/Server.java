@@ -2,6 +2,7 @@ package cs455.scaling.server;
 
 import cs455.scaling.server.work.AcceptConnection;
 import cs455.scaling.server.work.ReadMessage;
+import cs455.scaling.server.work.Work;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -11,6 +12,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -22,6 +24,10 @@ public class Server
     private final ServerSocketChannel serverSocketChannel;
 
     private final AtomicInteger clientConnectionCount = new AtomicInteger(0);
+    private final AtomicInteger replySentCount = new AtomicInteger(0);
+//    private final
+
+
     public final ThreadPoolManager threadPoolManager;
     private final int batchSize;
     private final int batchTime;
@@ -48,6 +54,7 @@ public class Server
      */
     private void initializeServer() throws IOException
     {
+
         mySelector = Selector.open();
         serverSocketChannel.configureBlocking(false);
         serverSocketChannel.register(mySelector, SelectionKey.OP_ACCEPT);
@@ -55,13 +62,15 @@ public class Server
 
     private void run()
     {
+        new Thread(new ServerStatistics(this)).start();
+        ConcurrentLinkedQueue<Work> newBatch = new ConcurrentLinkedQueue<>();
         while (true)
         {
             try
             {
                 mySelector.selectNow();
                 Set<SelectionKey> selectedKeys = mySelector.selectedKeys();
-                iterateKeys(selectedKeys);
+                iterateKeys(selectedKeys, newBatch);
             }
             catch (Exception e)
             {
@@ -76,31 +85,51 @@ public class Server
     /**
      * @param keySet
      */
-    private void iterateKeys(Set<SelectionKey> keySet) throws ClosedChannelException
+    private void iterateKeys(Set<SelectionKey> keySet, ConcurrentLinkedQueue<Work> newBatch)
     {
         Iterator<SelectionKey> keyIterator = keySet.iterator();
 
         while (keyIterator.hasNext())
         {
+            if (newBatch.size() == batchSize)
+            {
+                threadPoolManager.addWork(newBatch);
+                newBatch = new ConcurrentLinkedQueue<>();
+            }
+
             SelectionKey key = keyIterator.next();
+            keyIterator.remove();
             if (!key.isValid())
             {
                 System.out.println("Invalid Key");
+                try
+                {
+                    key.channel().close();
+                    decrementClientConnectionCount();
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
+
                 continue;
             }
 
             if (key.isAcceptable())
             {
-                serverSocketChannel.register(mySelector, key.interestOps() & ~SelectionKey.OP_ACCEPT);
-                threadPoolManager.addWork(new AcceptConnection(key, this));
+                key.interestOps(key.interestOps() & ~SelectionKey.OP_ACCEPT);
+                newBatch.add(new AcceptConnection(key, this));
+                threadPoolManager.addWork(newBatch);
+//                keyIterator.remove();
+                continue;
+
             }else if (key.isReadable())
             {
                 key.interestOps(SelectionKey.OP_WRITE);
 //                serverSocketChannel.register(mySelector, key.interestOps() & ~SelectionKey.OP_READ);
-                threadPoolManager.addWork(new ReadMessage(key, this, batchSize, batchTime));
+//                System.out.println("Add Read Message");
+                newBatch.add(new ReadMessage(key, this, batchSize, batchTime));
             }
-
-            keyIterator.remove();
         }
     }
 
@@ -128,6 +157,16 @@ public class Server
         clientConnectionCount.decrementAndGet();
     }
 
+    public void incrementReplySentCount()
+    {
+        replySentCount.incrementAndGet();
+    }
+
+    public int getReplySentCount()
+    {
+        return replySentCount.get();
+    }
+
     public synchronized Selector getMySelector()
     {
         return mySelector;
@@ -137,6 +176,7 @@ public class Server
     {
         return serverSocketChannel;
     }
+
       //////////////////////////////
      /////Command Line Input///////
     //////////////////////////////

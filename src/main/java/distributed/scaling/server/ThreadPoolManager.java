@@ -2,12 +2,13 @@ package cs455.scaling.server;
 
 import cs455.scaling.server.work.Work;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class ThreadPoolManager
 {
 
-    public final LinkedBlockingQueue<Runnable> workQueue;
+    public final LinkedBlockingQueue<ConcurrentLinkedQueue<Work>> workQueue;
     private WorkerThread[] workerThreadPool;
     private final int batchSize;
     private final int batchTime;
@@ -34,13 +35,14 @@ public class ThreadPoolManager
     }
 
 
-    public void addWork(Work work)
+    public void addWork(ConcurrentLinkedQueue<Work> workList)
     {
+
         synchronized (workQueue)
         {
             try
             {
-                workQueue.put(work);
+                workQueue.put(workList);
             }
             catch (InterruptedException e)
             {
@@ -50,13 +52,13 @@ public class ThreadPoolManager
         }
     }
 
-    public Work getWork()
+    public ConcurrentLinkedQueue<Work> getWork()
     {
         synchronized (workQueue)
         {
-            return (Work)workQueue.poll();
-
+            return workQueue.poll();
         }
 
     }
+
 }

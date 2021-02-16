@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ReadMessage extends Work
 {
@@ -19,47 +20,41 @@ public class ReadMessage extends Work
         this.server = server;
         this.batchSize = batchSize;
         this.batchTime = batchTime;
+        this.dataPacketList = new LinkedBlockingQueue<Byte[]>(batchSize);
+
     }
 
     @Override
     public void run()
     {
         SocketChannel socketToClient = (SocketChannel) key.channel();
+        receiveBuffer.clear();
+        byte[] messageBytes = new byte[8192];
         try
         {
             socketToClient.configureBlocking(false);
             socketToClient.register(server.getMySelector(), SelectionKey.OP_READ);
+            readBufferTillBatchSize(messageBytes, socketToClient);
         }
         catch (IOException e)
         {
             e.printStackTrace();
         }
-        receiveBuffer.clear();
-        byte[] messageBytes = new byte[8192];
-        readBufferTillBatchSize(messageBytes, socketToClient);
-        key.interestOps(SelectionKey.OP_READ);
-        server.getMySelector().wakeup();
-
+        System.out.println("Read");
     }
 
-    private void readBufferTillBatchSize(byte[] messageBytes, SocketChannel socketToClient)
+    private void readBufferTillBatchSize(byte[] messageBytes, SocketChannel socketToClient) throws IOException
     {
-        try
-        {
             int num = 0;
-            while (num < 1)
+            while (num < 8192)
             {
                 num = socketToClient.read(receiveBuffer);
             }
             receiveBuffer.rewind();
             receiveBuffer.get(messageBytes);
-        }
-        catch (IOException e)
-        {
-            System.out.println("ReadMessage: Error while receiving message");
-            e.printStackTrace();
-        }
 
-        server.threadPoolManager.addWork(new HashMessage(key, server, messageBytes));
+        key.interestOps(SelectionKey.OP_READ);
+        server.getMySelector().wakeup();
+        new HashMessage(key, server, messageBytes).run();
     }
 }
